@@ -1723,36 +1723,34 @@
 
         // Function to highlight a district
         function highlightDistrict(districtName) {
-            // Reset previously highlighted district
-            if (currentlyHighlighted) {
-                allMarkers[currentlyHighlighted].forEach(marker => {
-                    const icon = marker.options.icon;
-                    icon.options.className = icon.options.className.replace(' highlighted', '');
-                    icon.options.iconSize = [8, 8];
-                    marker.setIcon(icon);
-                });
-                
-                // Remove active class from district item
-                const prevItems = document.querySelectorAll('.district-item');
-                prevItems.forEach(item => {
-                    if (item.textContent === currentlyHighlighted) {
-                        item.classList.remove('active');
-                    }
-                });
-            }
+            // Reset all markers and district items first
+            templeData.kerala_temples.districts.forEach(district => {
+                if (allMarkers[district.district_name]) {
+                    allMarkers[district.district_name].forEach(marker => {
+                        const icon = marker.options.icon;
+                        icon.options.className = 'temple-icon';
+                        icon.options.iconSize = [8, 8];
+                        marker.setIcon(icon);
+                    });
+                }
+            });
             
-            // Highlight new district
+            // Remove active class from all district items
+            document.querySelectorAll('.district-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // If a district is selected, highlight its markers and item
             if (districtName && allMarkers[districtName]) {
                 allMarkers[districtName].forEach(marker => {
                     const icon = marker.options.icon;
-                    icon.options.className += ' highlighted';
+                    icon.options.className = 'temple-icon highlighted';
                     icon.options.iconSize = [12, 12];
                     marker.setIcon(icon);
                 });
                 
-                // Add active class to district item
-                const items = document.querySelectorAll('.district-item');
-                items.forEach(item => {
+                // Add active class to selected district item
+                document.querySelectorAll('.district-item').forEach(item => {
                     if (item.textContent === districtName) {
                         item.classList.add('active');
                     }
@@ -1763,16 +1761,15 @@
                 if (bounds.isValid()) {
                     map.fitBounds(bounds, {padding: [50, 50]});
                 }
-                
-                currentlyHighlighted = districtName;
-            } else {
-                currentlyHighlighted = null;
             }
+            
+            currentlyHighlighted = districtName;
         }
 
         // Function to reset highlighting
         function resetHighlighting() {
             highlightDistrict(null);
+            map.setView([10.8505, 76.2711], 8);
         }
 
         // Call the function to add markers
@@ -1804,7 +1801,12 @@
                 const item = L.DomUtil.create('div', 'district-item', container);
                 item.innerHTML = district.district_name;
                 item.onclick = function() {
-                    highlightDistrict(district.district_name);
+                    // Toggle selection - if already selected, deselect
+                    if (currentlyHighlighted === district.district_name) {
+                        resetHighlighting();
+                    } else {
+                        highlightDistrict(district.district_name);
+                    }
                 };
             });
             
@@ -1812,7 +1814,6 @@
             resetBtn.innerHTML = 'Reset View';
             resetBtn.onclick = function() {
                 resetHighlighting();
-                map.setView([10.8505, 76.2711], 8);
             };
             
             return div;

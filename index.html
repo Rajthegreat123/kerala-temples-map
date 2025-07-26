@@ -8,6 +8,9 @@
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
     <style>
         body {
             margin: 0;
@@ -25,12 +28,10 @@
             height: 8px;
             transition: all 0.3s ease;
         }
-        .temple-icon.active {
-            background-color: #0078A8;
+        .temple-icon.highlighted {
+            background-color: #0066ff;
             width: 12px;
             height: 12px;
-            border: 2px solid white;
-            box-shadow: 0 0 8px rgba(0, 120, 168, 0.6);
         }
         .railway-line {
             color: #333;
@@ -67,53 +68,57 @@
             box-shadow: 0 0 15px rgba(0,0,0,0.2);
             max-height: 300px;
             overflow-y: auto;
-            min-width: 200px;
         }
-        .district-control-header {
+        .district-control.collapsed {
+            width: 40px;
+            height: 40px;
+            overflow: hidden;
+        }
+        .district-control.collapsed .district-container {
+            display: none;
+        }
+        .district-control.collapsed h4 {
+            display: none;
+        }
+        .district-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 10px;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 5px;
         }
-        .minimize-btn {
-            background: #f0f0f0;
-            border: none;
-            border-radius: 3px;
+        .toggle-btn {
             cursor: pointer;
-            padding: 2px 6px;
-            font-size: 12px;
-        }
-        .minimize-btn:hover {
-            background: #e0e0e0;
-        }
-        .district-container {
-            transition: all 0.3s ease;
-            overflow: hidden;
-        }
-        .district-container.minimized {
-            max-height: 0;
-            opacity: 0;
+            background: none;
+            border: none;
+            font-size: 16px;
+            color: #555;
         }
         .district-item {
             margin: 5px 0;
             cursor: pointer;
             padding: 5px;
             border-radius: 3px;
-            transition: all 0.2s ease;
         }
         .district-item:hover {
-            color: #0078A8;
-            background: #f5f5f5;
+            background-color: #f0f0f0;
         }
         .district-item.active {
-            background: #0078A8;
-            color: white;
-            border: 2px solid #005a8a;
+            background-color: #e6f2ff;
+            font-weight: bold;
         }
-        .district-control.minimized {
-            max-height: 50px;
+        .reset-btn {
+            display: block;
+            width: 100%;
+            padding: 5px;
+            margin-top: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            cursor: pointer;
+            text-align: center;
+        }
+        .reset-btn:hover {
+            background-color: #e9ecef;
         }
     </style>
 </head>
@@ -161,6 +166,7 @@
             div.innerHTML = `
                 <h4>Legend</h4>
                 <div><i style="background: red"></i> Temple</div>
+                <div><i style="background: #0066ff"></i> Selected District</div>
                 <div><i style="background: #333; width: 15px; height: 3px; margin-top: 8px;"></i> Railway</div>
             `;
             return div;
@@ -1676,12 +1682,14 @@
   }
 };
 
-        // Create layer groups for each district and store markers
+        // Create layer groups for each district and store all markers
         const districtLayers = {};
-        const districtMarkers = {};
+        const allMarkers = {};
+        let currentlyHighlighted = null;
+
         templeData.kerala_temples.districts.forEach(district => {
             districtLayers[district.district_name] = L.layerGroup();
-            districtMarkers[district.district_name] = [];
+            allMarkers[district.district_name] = [];
         });
 
         // Function to add temple markers
@@ -1705,7 +1713,7 @@
                         `);
                     
                     districtLayers[district.district_name].addLayer(marker);
-                    districtMarkers[district.district_name].push(marker);
+                    allMarkers[district.district_name].push(marker);
                 });
                 
                 // Add district layer to map
@@ -1713,104 +1721,99 @@
             });
         }
 
-        // Function to reset all markers to original state
-        function resetAllMarkers() {
-            Object.values(districtMarkers).forEach(markers => {
-                markers.forEach(marker => {
-                    const iconElement = marker.getElement();
-                    if (iconElement) {
-                        iconElement.querySelector('.temple-icon').classList.remove('active');
-                    }
+        // Function to highlight a district
+        function highlightDistrict(districtName) {
+            // Reset previously highlighted district
+            if (currentlyHighlighted) {
+                allMarkers[currentlyHighlighted].forEach(marker => {
+                    const icon = marker.options.icon;
+                    icon.options.className = icon.options.className.replace(' highlighted', '');
+                    icon.options.iconSize = [8, 8];
+                    marker.setIcon(icon);
                 });
-            });
-        }
-
-        // Function to activate district markers
-        function activateDistrictMarkers(districtName) {
-            if (districtMarkers[districtName]) {
-                districtMarkers[districtName].forEach(marker => {
-                    const iconElement = marker.getElement();
-                    if (iconElement) {
-                        iconElement.querySelector('.temple-icon').classList.add('active');
+                
+                // Remove active class from district item
+                const prevItems = document.querySelectorAll('.district-item');
+                prevItems.forEach(item => {
+                    if (item.textContent === currentlyHighlighted) {
+                        item.classList.remove('active');
                     }
                 });
             }
+            
+            // Highlight new district
+            if (districtName && allMarkers[districtName]) {
+                allMarkers[districtName].forEach(marker => {
+                    const icon = marker.options.icon;
+                    icon.options.className += ' highlighted';
+                    icon.options.iconSize = [12, 12];
+                    marker.setIcon(icon);
+                });
+                
+                // Add active class to district item
+                const items = document.querySelectorAll('.district-item');
+                items.forEach(item => {
+                    if (item.textContent === districtName) {
+                        item.classList.add('active');
+                    }
+                });
+                
+                // Zoom to district bounds
+                const bounds = districtLayers[districtName].getBounds();
+                if (bounds.isValid()) {
+                    map.fitBounds(bounds, {padding: [50, 50]});
+                }
+                
+                currentlyHighlighted = districtName;
+            } else {
+                currentlyHighlighted = null;
+            }
+        }
+
+        // Function to reset highlighting
+        function resetHighlighting() {
+            highlightDistrict(null);
         }
 
         // Call the function to add markers
         addTempleMarkers();
 
-        // Add district control with minimize/maximize functionality
+        // Add district control
         const districtControl = L.control({position: 'topleft'});
-        let currentActiveDistrict = null;
         
         districtControl.onAdd = function(map) {
             const div = L.DomUtil.create('div', 'district-control');
             
-            // Create header with minimize button
-            const header = L.DomUtil.create('div', 'district-control-header');
-            const title = L.DomUtil.create('h4', '', header);
-            title.innerHTML = 'Districts';
-            title.style.margin = '0';
+            const header = L.DomUtil.create('div', 'district-header', div);
+            header.innerHTML = '<h4>Districts</h4>';
             
-            const minimizeBtn = L.DomUtil.create('button', 'minimize-btn', header);
-            minimizeBtn.innerHTML = '−';
-            minimizeBtn.title = 'Minimize';
-            
-            div.appendChild(header);
-            
-            const container = L.DomUtil.create('div', 'district-container');
-            div.appendChild(container);
-            
-            // Minimize/maximize functionality
-            let isMinimized = false;
-            minimizeBtn.onclick = function(e) {
-                e.stopPropagation();
-                isMinimized = !isMinimized;
-                
-                if (isMinimized) {
-                    container.classList.add('minimized');
-                    div.classList.add('minimized');
-                    minimizeBtn.innerHTML = '+';
-                    minimizeBtn.title = 'Maximize';
+            const toggleBtn = L.DomUtil.create('button', 'toggle-btn', header);
+            toggleBtn.innerHTML = '<i class="fas fa-chevron-up"></i>';
+            toggleBtn.onclick = function() {
+                div.classList.toggle('collapsed');
+                if (div.classList.contains('collapsed')) {
+                    toggleBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
                 } else {
-                    container.classList.remove('minimized');
-                    div.classList.remove('minimized');
-                    minimizeBtn.innerHTML = '−';
-                    minimizeBtn.title = 'Minimize';
+                    toggleBtn.innerHTML = '<i class="fas fa-chevron-up"></i>';
                 }
             };
             
-            // Prevent map events when clicking on control
-            L.DomEvent.disableClickPropagation(div);
+            const container = L.DomUtil.create('div', 'district-container', div);
             
             templeData.kerala_temples.districts.forEach(district => {
                 const item = L.DomUtil.create('div', 'district-item', container);
                 item.innerHTML = district.district_name;
                 item.onclick = function() {
-                    // Remove active class from previous district
-                    if (currentActiveDistrict) {
-                        currentActiveDistrict.classList.remove('active');
-                        // Reset all markers to original state
-                        resetAllMarkers();
-                    }
-                    
-                    // Add active class to clicked district
-                    item.classList.add('active');
-                    currentActiveDistrict = item;
-                    
-                    // Zoom to district
-                    const bounds = districtLayers[district.district_name].getBounds();
-                    if (bounds.isValid()) {
-                        map.fitBounds(bounds, {padding: [50, 50]});
-                        
-                        // Activate markers for this district
-                        setTimeout(() => {
-                            activateDistrictMarkers(district.district_name);
-                        }, 100);
-                    }
+                    highlightDistrict(district.district_name);
                 };
             });
+            
+            const resetBtn = L.DomUtil.create('button', 'reset-btn', div);
+            resetBtn.innerHTML = 'Reset View';
+            resetBtn.onclick = function() {
+                resetHighlighting();
+                map.setView([10.8505, 76.2711], 8);
+            };
             
             return div;
         };

@@ -23,6 +23,14 @@
             border-radius: 50%;
             width: 8px;
             height: 8px;
+            transition: all 0.3s ease;
+        }
+        .temple-icon.active {
+            background-color: #0078A8;
+            width: 12px;
+            height: 12px;
+            border: 2px solid white;
+            box-shadow: 0 0 8px rgba(0, 120, 168, 0.6);
         }
         .railway-line {
             color: #333;
@@ -59,14 +67,53 @@
             box-shadow: 0 0 15px rgba(0,0,0,0.2);
             max-height: 300px;
             overflow-y: auto;
+            min-width: 200px;
+        }
+        .district-control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        .minimize-btn {
+            background: #f0f0f0;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            padding: 2px 6px;
+            font-size: 12px;
+        }
+        .minimize-btn:hover {
+            background: #e0e0e0;
+        }
+        .district-container {
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        .district-container.minimized {
+            max-height: 0;
+            opacity: 0;
         }
         .district-item {
             margin: 5px 0;
             cursor: pointer;
+            padding: 5px;
+            border-radius: 3px;
+            transition: all 0.2s ease;
         }
         .district-item:hover {
             color: #0078A8;
-            text-decoration: underline;
+            background: #f5f5f5;
+        }
+        .district-item.active {
+            background: #0078A8;
+            color: white;
+            border: 2px solid #005a8a;
+        }
+        .district-control.minimized {
+            max-height: 50px;
         }
     </style>
 </head>
@@ -1629,10 +1676,12 @@
   }
 };
 
-        // Create layer groups for each district
+        // Create layer groups for each district and store markers
         const districtLayers = {};
+        const districtMarkers = {};
         templeData.kerala_temples.districts.forEach(district => {
             districtLayers[district.district_name] = L.layerGroup();
+            districtMarkers[district.district_name] = [];
         });
 
         // Function to add temple markers
@@ -1656,6 +1705,7 @@
                         `);
                     
                     districtLayers[district.district_name].addLayer(marker);
+                    districtMarkers[district.district_name].push(marker);
                 });
                 
                 // Add district layer to map
@@ -1663,26 +1713,101 @@
             });
         }
 
+        // Function to reset all markers to original state
+        function resetAllMarkers() {
+            Object.values(districtMarkers).forEach(markers => {
+                markers.forEach(marker => {
+                    const iconElement = marker.getElement();
+                    if (iconElement) {
+                        iconElement.querySelector('.temple-icon').classList.remove('active');
+                    }
+                });
+            });
+        }
+
+        // Function to activate district markers
+        function activateDistrictMarkers(districtName) {
+            if (districtMarkers[districtName]) {
+                districtMarkers[districtName].forEach(marker => {
+                    const iconElement = marker.getElement();
+                    if (iconElement) {
+                        iconElement.querySelector('.temple-icon').classList.add('active');
+                    }
+                });
+            }
+        }
+
         // Call the function to add markers
         addTempleMarkers();
 
-        // Add district control
+        // Add district control with minimize/maximize functionality
         const districtControl = L.control({position: 'topleft'});
+        let currentActiveDistrict = null;
         
         districtControl.onAdd = function(map) {
             const div = L.DomUtil.create('div', 'district-control');
-            div.innerHTML = '<h4>Districts</h4>';
+            
+            // Create header with minimize button
+            const header = L.DomUtil.create('div', 'district-control-header');
+            const title = L.DomUtil.create('h4', '', header);
+            title.innerHTML = 'Districts';
+            title.style.margin = '0';
+            
+            const minimizeBtn = L.DomUtil.create('button', 'minimize-btn', header);
+            minimizeBtn.innerHTML = '−';
+            minimizeBtn.title = 'Minimize';
+            
+            div.appendChild(header);
             
             const container = L.DomUtil.create('div', 'district-container');
             div.appendChild(container);
+            
+            // Minimize/maximize functionality
+            let isMinimized = false;
+            minimizeBtn.onclick = function(e) {
+                e.stopPropagation();
+                isMinimized = !isMinimized;
+                
+                if (isMinimized) {
+                    container.classList.add('minimized');
+                    div.classList.add('minimized');
+                    minimizeBtn.innerHTML = '+';
+                    minimizeBtn.title = 'Maximize';
+                } else {
+                    container.classList.remove('minimized');
+                    div.classList.remove('minimized');
+                    minimizeBtn.innerHTML = '−';
+                    minimizeBtn.title = 'Minimize';
+                }
+            };
+            
+            // Prevent map events when clicking on control
+            L.DomEvent.disableClickPropagation(div);
             
             templeData.kerala_temples.districts.forEach(district => {
                 const item = L.DomUtil.create('div', 'district-item', container);
                 item.innerHTML = district.district_name;
                 item.onclick = function() {
+                    // Remove active class from previous district
+                    if (currentActiveDistrict) {
+                        currentActiveDistrict.classList.remove('active');
+                        // Reset all markers to original state
+                        resetAllMarkers();
+                    }
+                    
+                    // Add active class to clicked district
+                    item.classList.add('active');
+                    currentActiveDistrict = item;
+                    
+                    // Zoom to district
                     const bounds = districtLayers[district.district_name].getBounds();
                     if (bounds.isValid()) {
                         map.fitBounds(bounds, {padding: [50, 50]});
+                        
+                        // Activate markers for this district
+                        setTimeout(() => {
+                            activateDistrictMarkers(district.district_name);
+                        }, 100);
                     }
                 };
             });

@@ -1,0 +1,1696 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kerala Temples Map</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        #map {
+            width: 100%;
+            height: 100vh;
+        }
+        .temple-icon {
+            background-color: red;
+            border-radius: 50%;
+            width: 8px;
+            height: 8px;
+        }
+        .railway-line {
+            color: #333;
+            weight: 3;
+            opacity: 0.7;
+        }
+        .info {
+            padding: 6px 8px;
+            font: 14px/16px Arial, sans-serif;
+            background: white;
+            background: rgba(255,255,255,0.9);
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            border-radius: 5px;
+        }
+        .info h4 {
+            margin: 0 0 5px;
+            color: #555;
+        }
+        .legend {
+            line-height: 18px;
+            color: #555;
+        }
+        .legend i {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-right: 8px;
+            opacity: 0.7;
+        }
+        .district-control {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .district-item {
+            margin: 5px 0;
+            cursor: pointer;
+        }
+        .district-item:hover {
+            color: #0078A8;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    
+    <script>
+        // Initialize the map centered on Kerala
+        const map = L.map('map').setView([10.8505, 76.2711], 8);
+
+        // Add OpenStreetMap base layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Sample railway line coordinates (approximate path)
+        const railwayLineCoordinates = [
+            [12.5000, 74.9833], // Kasaragod
+            [11.8745, 75.3704], // Kannur
+            [11.2588, 75.7804], // Kozhikode
+            [10.5276, 76.2144], // Thrissur
+            [10.0159, 76.3419], // Ernakulam
+            [9.4980, 76.3388],  // Kottayam
+            [9.0935, 76.4915],  // Kayamkulam
+            [8.8932, 76.6141],  // Kollam
+            [8.5241, 76.9366]   // Thiruvananthapuram
+        ];
+
+        // Add railway line to the map
+        const railwayLine = L.polyline(railwayLineCoordinates, {
+            color: '#333',
+            weight: 3,
+            opacity: 0.7,
+            dashArray: '10, 10'
+        }).addTo(map).bindPopup("Kerala Railway Line");
+
+        // Legend control
+        const legend = L.control({position: 'bottomright'});
+
+        legend.onAdd = function(map) {
+            const div = L.DomUtil.create('div', 'info legend');
+            div.innerHTML = `
+                <h4>Legend</h4>
+                <div><i style="background: red"></i> Temple</div>
+                <div><i style="background: #333; width: 15px; height: 3px; margin-top: 8px;"></i> Railway</div>
+            `;
+            return div;
+        };
+
+        legend.addTo(map);
+
+        // Temple data from your JSON
+        const templeData = {
+  "kerala_temples": {
+    "districts": [
+      {
+        "district_name": "KASARAGOD",
+        "position": "Northernmost District",
+        "temples": [
+          {
+            "name": "Ananthapura Lake Temple",
+            "location": "Ananthapura",
+            "deity": "Lord Mahavishnu",
+            "latitude": 12.58,
+            "longitude": 74.98
+          },
+          {
+            "name": "Madhur Temple",
+            "location": "Madhur",
+            "deity": "Ganesha",
+            "latitude": 12.55,
+            "longitude": 75.01
+          },
+          {
+            "name": "Sree Madiyan Koolom Temple",
+            "location": "Kanhangad",
+            "deity": "Eeshwaran",
+            "latitude": 12.35,
+            "longitude": 75.08
+          },
+          {
+            "name": "Sri Lakshmi Venkatesh Temple",
+            "location": "Kanhangad",
+            "deity": "Vishnu",
+            "latitude": 12.308889,
+            "longitude": 75.096111
+          },
+          {
+            "name": "Kanipura Sri Gopalakrishna Temple",
+            "location": "Kumbla",
+            "deity": "Krishna",
+            "latitude": 12.5949093,
+            "longitude": 74.9424009
+          },
+          {
+            "name": "Nileshwar Muthappan Madappura",
+            "location": "Nileshwaram",
+            "deity": "Muthappan",
+            "latitude": 12.25,
+            "longitude": 75.13
+          },
+          {
+            "name": "Altharakkal Sree Muthappan Madapura",
+            "location": "Kanhangad",
+            "deity": "Muthappan",
+            "latitude": 12.3645301,
+            "longitude": 75.10438158
+          },
+          {
+            "name": "Mayathi Devi Temple",
+            "location": "Balanthode, Panathady",
+            "deity": "Devi",
+            "latitude": 12.46,
+            "longitude": 75.31
+          },
+          {
+            "name": "Kanila Shree Bhagavathi Temple",
+            "location": "Manjeshwaram",
+            "deity": "Baghavathi",
+            "latitude": 12.712611,
+            "longitude": 74.901171
+          },
+          {
+            "name": "Sree Chakrapani Temple",
+            "location": "Thrikaripur",
+            "deity": "Vishnu",
+            "latitude": 12.1305994,
+            "longitude": 75.1758572
+          }
+        ]
+      },
+      {
+        "district_name": "KANNUR",
+        "temples": [
+          {
+            "name": "Rajarajeshwara Temple",
+            "location": "Taliparamba",
+            "deity": "Shiva",
+            "latitude": 12.05,
+            "longitude": 75.36
+          },
+          {
+            "name": "Kottiyoor Temple",
+            "location": "Kottiyoor",
+            "deity": "Shiva",
+            "latitude": 11.87,
+            "longitude": 75.86
+          },
+          {
+            "name": "Thiruvangad Sree Ramaswami Temple",
+            "location": "Thalassery",
+            "deity": "Sree Rama",
+            "latitude": 11.75,
+            "longitude": 75.5
+          },
+          {
+            "name": "Muthappan Temple",
+            "location": "Parassini",
+            "deity": "Muthappan",
+            "latitude": 11.982464,
+            "longitude": 75.402006
+          },
+          {
+            "name": "Trichambaram Temple",
+            "location": "Taliparamba",
+            "deity": "Krishna",
+            "latitude": 12.03,
+            "longitude": 75.37
+          },
+          {
+            "name": "Mridanga Saileswari Temple",
+            "location": "Muzhakunnu",
+            "deity": "Durga",
+            "latitude": 11.92,
+            "longitude": 75.69
+          },
+          {
+            "name": "Sree Andalurkavu",
+            "location": "Thalassery",
+            "deity": "Rama/Daivathar",
+            "latitude": 11.8,
+            "longitude": 75.48
+          },
+          {
+            "name": "Vadeshwaram Temple",
+            "location": "Aroli",
+            "deity": "Shiva",
+            "latitude": 11.96,
+            "longitude": 75.36
+          },
+          {
+            "name": "Oorpazhachi Kavu",
+            "location": "Edakkad",
+            "deity": "Bhagavathy",
+            "latitude": 11.83,
+            "longitude": 75.44
+          },
+          {
+            "name": "Kalarivathukkal Bhagavathy Temple",
+            "location": "Valapattanam",
+            "deity": "Bhadrakali",
+            "latitude": 11.92463,
+            "longitude": 75.353042
+          },
+          {
+            "name": "Annapurneshwari Temple",
+            "location": "Cherukunnu, Kannapuram",
+            "deity": "Annapoorneshwari, Krishna",
+            "latitude": 11.99,
+            "longitude": 75.3
+          },
+          {
+            "name": "Madayi Kavu",
+            "location": "Madayi",
+            "deity": "Bhadrakali",
+            "latitude": 12.03,
+            "longitude": 75.26
+          },
+          {
+            "name": "Kunnathoor Padi",
+            "location": "Sahyadri Mountains",
+            "deity": "Muthappan",
+            "latitude": 12.0786,
+            "longitude": 75.6199
+          },
+          {
+            "name": "Jagannath Temple",
+            "location": "Thalassery",
+            "deity": "Shiva",
+            "latitude": 11.74,
+            "longitude": 75.51
+          },
+          {
+            "name": "Sree Sundareswara Temple",
+            "location": "Talap",
+            "deity": "Siva",
+            "latitude": 11.88,
+            "longitude": 75.37
+          }
+        ]
+      },
+      {
+        "district_name": "WAYANAD",
+        "temples": [
+          {
+            "name": "Valliyoorkkavu",
+            "location": "Mananthavadi",
+            "deity": "Durga",
+            "latitude": 11.804459,
+            "longitude": 76.030037
+          },
+          {
+            "name": "Thirunelli Temple",
+            "location": "Thirunelli",
+            "deity": "Maha Vishnu",
+            "latitude": 11.89926,
+            "longitude": 76.02379
+          }
+        ]
+      },
+      {
+        "district_name": "KOZHIKODE",
+        "temples": [
+          {
+            "name": "Abhimanyu Temple",
+            "location": "Kuttiady",
+            "deity": "Abhimanyu",
+            "latitude": 11.663425361225244,
+            "longitude": 75.72030143656244
+          },
+          {
+            "name": "Lokanarkavu Temple",
+            "location": "Vatakara",
+            "deity": "Durga",
+            "latitude": 11.6,
+            "longitude": 75.58
+          },
+          {
+            "name": "Pisharikavu Temple",
+            "location": "Koyilandy",
+            "deity": "Durga",
+            "latitude": 11.4582,
+            "longitude": 75.6785
+          },
+          {
+            "name": "Tali Shiva Temple",
+            "location": "Kozhikode",
+            "deity": "Shiva",
+            "latitude": 11.24774,
+            "longitude": 75.787338
+          },
+          {
+            "name": "Thalikkunu Shiva Temple",
+            "location": "Mankavu, Kozhikode",
+            "deity": "Shiva",
+            "latitude": 11.2374815,
+            "longitude": 75.8094068
+          },
+          {
+            "name": "Valayanad Devi Temple",
+            "location": "Govindapuram, Kozhikode",
+            "deity": "Bhagavathi",
+            "latitude": 11.24,
+            "longitude": 75.8
+          },
+          {
+            "name": "Varakkal Devi Temple",
+            "location": "West Hill, Kozhikode",
+            "deity": "Durga",
+            "latitude": 11.289754,
+            "longitude": 75.762186
+          },
+          {
+            "name": "Subramanya Swamy Temple",
+            "location": "Polur, Kuruvattur, Kozhikode",
+            "deity": "Sree Subramanya Swami",
+            "latitude": 11.35,
+            "longitude": 75.85
+          }
+        ]
+      },
+      {
+        "district_name": "MALAPPURAM",
+        "temples": [
+          {
+            "name": "Thirumandhamkunnu Temple",
+            "location": "Thirumanthamkunnu, Angadippuram",
+            "deity": "Bhagavathi",
+            "latitude": 10.98,
+            "longitude": 76.2
+          },
+          {
+            "name": "Alattiyur Hanuman Temple",
+            "location": "Alathiyur, Tirur",
+            "deity": "Hanuman",
+            "latitude": 10.87204,
+            "longitude": 75.939264
+          },
+          {
+            "name": "Bhayankavu Bhagavathi Temple",
+            "location": "Purathur, Tirur",
+            "deity": "Bhagavathi",
+            "latitude": 10.82,
+            "longitude": 75.92
+          },
+          {
+            "name": "Thrikkavu Temple",
+            "location": "Ponnani",
+            "deity": "Durga",
+            "latitude": 10.78,
+            "longitude": 75.93
+          },
+          {
+            "name": "Thirunavaya Navamukunda Temple",
+            "location": "Tirunavaya, Tirur",
+            "deity": "Navamukunda, Lakshmi",
+            "latitude": 10.8656858,
+            "longitude": 75.9843017
+          },
+          {
+            "name": "Kadampuzha Devi Temple",
+            "location": "Kadampuzha, Tirur",
+            "deity": "Durga",
+            "latitude": 10.943935,
+            "longitude": 76.043513
+          },
+          {
+            "name": "Triprangode Siva Temple",
+            "location": "Triprangode, Tirur",
+            "deity": "Shiva",
+            "latitude": 10.855549,
+            "longitude": 75.947727
+          },
+          {
+            "name": "Vairankode Bhagavathy Temple",
+            "location": "Vairankode, Tirur",
+            "deity": "Bhagavathi",
+            "latitude": 10.886454,
+            "longitude": 75.97612
+          },
+          {
+            "name": "Keraladeshpuram Temple",
+            "location": "Tanur",
+            "deity": "Vishnu",
+            "latitude": 10.97,
+            "longitude": 75.87
+          },
+          {
+            "name": "Vettakkorumakan Temple",
+            "location": "Nilambur Kovilakam, Nilambur",
+            "deity": "Son of Shiva",
+            "latitude": 11.28,
+            "longitude": 76.22
+          }
+        ]
+      },
+      {
+        "district_name": "PALAKKAD",
+        "temples": [
+          {
+            "name": "Meenkulathi Temple",
+            "location": "Pallassena",
+            "deity": "Bhagavati",
+            "latitude": 10.64,
+            "longitude": 76.66
+          },
+          {
+            "name": "Manapullikavu Temple",
+            "location": "East Yakara, Palakkad",
+            "deity": "Bhagavati",
+            "latitude": 10.758056,
+            "longitude": 76.665
+          },
+          {
+            "name": "Pariyanampatta Bhagavathi Temple",
+            "location": "Pariyanampatta",
+            "deity": "Bhagavati",
+            "latitude": 10.88,
+            "longitude": 76.4
+          },
+          {
+            "name": "Viswanatha Swamy Temple",
+            "location": "Kalpathy, Palakkad",
+            "deity": "Shiva",
+            "latitude": 10.79,
+            "longitude": 76.65
+          },
+          {
+            "name": "Killikkurussi Mahadeva Temple",
+            "location": "Killikkurussi",
+            "deity": "Shiva",
+            "latitude": 10.766,
+            "longitude": 76.436
+          },
+          {
+            "name": "Chinakkathoor Temple",
+            "location": "Palappuram, Ottapalam",
+            "deity": "Bhagavati",
+            "latitude": 10.77,
+            "longitude": 76.42
+          },
+          {
+            "name": "Karimpuzha Sree Ramaswamy Temple",
+            "location": "Karimpuzha",
+            "deity": "Sree Rama",
+            "latitude": 10.92,
+            "longitude": 76.42
+          },
+          {
+            "name": "Mangottu Bhagavathi Temple",
+            "location": "Athipotta",
+            "deity": "Bhagavathi",
+            "latitude": 10.67,
+            "longitude": 76.49
+          },
+          {
+            "name": "Panniyur Sri Varahamurthy Temple",
+            "location": "Kumbidi",
+            "deity": "Varaha",
+            "latitude": 10.83,
+            "longitude": 76.05
+          },
+          {
+            "name": "Thirumittakode Anchumoorthi Temple",
+            "location": "Thirumittacode",
+            "deity": "Shiva, Vishnu",
+            "latitude": 10.78,
+            "longitude": 76.18
+          },
+          {
+            "name": "Thrippalur Mahadeva Temple",
+            "location": "Alathur",
+            "deity": "Shiva",
+            "latitude": 10.64,
+            "longitude": 76.57
+          },
+          {
+            "name": "Kodikkunnu Bhagavathy Temple",
+            "location": "Pallippuram",
+            "deity": "Bhagavathi",
+            "latitude": 10.81,
+            "longitude": 76.13
+          },
+          {
+            "name": "Trithala Maha Siva Temple",
+            "location": "Thrithala",
+            "deity": "Shiva",
+            "latitude": 10.81,
+            "longitude": 76.13
+          },
+          {
+            "name": "Chittoorkavu Devi Temple",
+            "location": "Chittur",
+            "deity": "Bhagavati",
+            "latitude": 10.703611,
+            "longitude": 76.737972
+          },
+          {
+            "name": "Malamakkavu Ayyappa Temple",
+            "location": "Anakkara",
+            "deity": "Ayyappan",
+            "latitude": 10.82,
+            "longitude": 76.08
+          },
+          {
+            "name": "Ootukulangara Bhagavathy Temple",
+            "location": "Peruvemba",
+            "deity": "Bhagavati",
+            "latitude": 10.71,
+            "longitude": 76.69
+          },
+          {
+            "name": "Kodumbu Subramanya Swamy Temple",
+            "location": "Kodumbu",
+            "deity": "Subrahmanya",
+            "latitude": 10.741399,
+            "longitude": 76.697824
+          },
+          {
+            "name": "Vayilyamkunnu Bhagavathi Temple",
+            "location": "Kadampazhipuram",
+            "deity": "Bhagavati",
+            "latitude": 10.88,
+            "longitude": 76.45
+          }
+        ]
+      },
+      {
+        "district_name": "THRISSUR",
+        "temples": [
+          {
+            "name": "Ammathiruvadi Temple",
+            "location": "Urakam",
+            "deity": "Durga",
+            "latitude": 10.43,
+            "longitude": 76.21
+          },
+          {
+            "name": "Arattupuzha Temple",
+            "location": "Arattupuzha",
+            "deity": "Vasishtha",
+            "latitude": 10.42,
+            "longitude": 76.23
+          },
+          {
+            "name": "Avanangattilkalari Vishnumaya Temple",
+            "location": "Peringottukara",
+            "deity": "Vishnumaya",
+            "latitude": 10.44,
+            "longitude": 76.13
+          },
+          {
+            "name": "Chowalloor Siva Temple",
+            "location": "Guruvayur",
+            "deity": "Shiva",
+            "latitude": 10.59,
+            "longitude": 76.04
+          },
+          {
+            "name": "Guruvayur Temple",
+            "location": "Guruvayur",
+            "deity": "Sri Krishna",
+            "latitude": 10.59,
+            "longitude": 76.04
+          },
+          {
+            "name": "Kanadikavu Shree Vishnumaya Kuttichathan Swamy temple",
+            "location": "Peringottukara",
+            "deity": "Vishnumaya",
+            "latitude": 10.42,
+            "longitude": 76.13
+          },
+          {
+            "name": "Kodungallur Bhagavathy Temple",
+            "location": "Kodungallur",
+            "deity": "Bhagavathi",
+            "latitude": 10.23,
+            "longitude": 76.2
+          },
+          {
+            "name": "Koodalmanikyam Temple",
+            "location": "Irinjalakuda",
+            "deity": "Bharata",
+            "latitude": 10.35,
+            "longitude": 76.2
+          },
+          {
+            "name": "Kuttumuck Siva Temple",
+            "location": "Thrissur",
+            "deity": "Mahadeva",
+            "latitude": 10.55,
+            "longitude": 76.24
+          },
+          {
+            "name": "Mammiyoor Temple",
+            "location": "Mammiyoor",
+            "deity": "Shiva",
+            "latitude": 10.6,
+            "longitude": 76.04
+          },
+          {
+            "name": "Mathur Shiva Temple",
+            "location": "Kunnamkulam",
+            "deity": "Shiva",
+            "latitude": 10.65,
+            "longitude": 76.08
+          },
+          {
+            "name": "Mundayur Mahadeva Temple",
+            "location": "Anjur",
+            "deity": "Shiva",
+            "latitude": 10.53,
+            "longitude": 76.24
+          },
+          {
+            "name": "Paramekkavu Bagavathi Temple",
+            "location": "Thrissur",
+            "deity": "Bhagavathi",
+            "latitude": 10.52,
+            "longitude": 76.22
+          },
+          {
+            "name": "Payammal Shatrughna Temple",
+            "location": "Irinjalakuda",
+            "deity": "Shatrughna",
+            "latitude": 10.31,
+            "longitude": 76.19
+          },
+          {
+            "name": "Poonkunnam Siva Temple",
+            "location": "Punkunnam, Thrissur",
+            "deity": "Shiva",
+            "latitude": 10.53,
+            "longitude": 76.2
+          },
+          {
+            "name": "Thanikkudam Bhagavathi Temple",
+            "location": "Thanikkudam",
+            "deity": "Bhagavathi",
+            "latitude": 10.57,
+            "longitude": 76.26
+          },
+          {
+            "name": "Thiruvambadi Sri Krishna Temple",
+            "location": "Thrissur",
+            "deity": "Sri Krishna",
+            "latitude": 10.53,
+            "longitude": 76.21
+          },
+          {
+            "name": "Thiruvanchikulam Temple",
+            "location": "Kodungallur",
+            "deity": "Shiva",
+            "latitude": 10.21,
+            "longitude": 76.21
+          },
+          {
+            "name": "Thiruvullakkavu Sree Dharma Sastha Temple",
+            "location": "Cherpu",
+            "deity": "Dharma Sastha",
+            "latitude": 10.45,
+            "longitude": 76.22
+          },
+          {
+            "name": "Thottipal Bhagavati Temple",
+            "location": "Thottippal",
+            "deity": "Bhagavathi",
+            "latitude": 10.42,
+            "longitude": 76.23
+          },
+          {
+            "name": "Thriprayar Temple",
+            "location": "Triprayar",
+            "deity": "Sree Rama",
+            "latitude": 10.35,
+            "longitude": 76.13
+          },
+          {
+            "name": "Trikkur Mahadeva Temple",
+            "location": "Trikkur, Thrissur",
+            "deity": "Shiva",
+            "latitude": 10.48,
+            "longitude": 76.21
+          },
+          {
+            "name": "Vadakkunnathan Temple",
+            "location": "Thrissur",
+            "deity": "Shiva",
+            "latitude": 10.52,
+            "longitude": 76.21
+          },
+          {
+            "name": "Vilwadrinatha Temple",
+            "location": "Thiruvilwamala",
+            "deity": "Rama, Lakshmana",
+            "latitude": 10.77,
+            "longitude": 76.38
+          }
+        ]
+      },
+      {
+        "district_name": "ERNAKULAM",
+        "temples": [
+          {
+            "name": "Cochin Thirumala Devaswom",
+            "location": "Kochi",
+            "deity": "Venkateshwara",
+            "latitude": 9.96,
+            "longitude": 76.25
+          },
+          {
+            "name": "Chottanikkara Temple",
+            "location": "Chottanikkara",
+            "deity": "Maha Lakshmi and Maha Vishnu",
+            "latitude": 9.93,
+            "longitude": 76.39
+          },
+          {
+            "name": "Ernakulathappan Temple",
+            "location": "Ernakulam",
+            "deity": "Shiva, Ganesha, Parvati",
+            "latitude": 9.97,
+            "longitude": 76.28
+          },
+          {
+            "name": "Sree Poornathrayeesa Temple",
+            "location": "Tripunithura",
+            "deity": "Vishnu in the form of Santhana Gopala Moorthy",
+            "latitude": 9.95,
+            "longitude": 76.34
+          },
+          {
+            "name": "Thamaramkulangara Sree Dharma Sastha Temple",
+            "location": "Tripunithura",
+            "deity": "Ayyappan in the form of Dharma Sastha",
+            "latitude": 9.95,
+            "longitude": 76.34
+          },
+          {
+            "name": "Thrikkakara Vamanamoorthy Temple",
+            "location": "Thrikkakkara",
+            "deity": "Vamana",
+            "latitude": 10.03,
+            "longitude": 76.33
+          },
+          {
+            "name": "Thiru Nayathode Siva Narayana Temple",
+            "location": "Nayathod",
+            "deity": "Shiva",
+            "latitude": 10.16,
+            "longitude": 76.4
+          },
+          {
+            "name": "Makaliyam Sreeramaswamy Temple",
+            "location": "Irumpanam",
+            "deity": "Rama",
+            "latitude": 9.96,
+            "longitude": 76.36
+          },
+          {
+            "name": "Chittoor Sree Krishnaswamy Temple",
+            "location": "South Chittoor",
+            "deity": "Krishna",
+            "latitude": 10.03,
+            "longitude": 76.27
+          },
+          {
+            "name": "Cheranalloor Shiva Temple",
+            "location": "Cheranallur",
+            "deity": "Shiva",
+            "latitude": 10.0581,
+            "longitude": 76.2856
+          },
+          {
+            "name": "Maramkulangara Krishna Temple",
+            "location": "Eroor",
+            "deity": "Krishna",
+            "latitude": 9.97,
+            "longitude": 76.34
+          },
+          {
+            "name": "Dakshina Mookambika Temple",
+            "location": "North Paravur",
+            "deity": "Saraswati",
+            "latitude": 10.15,
+            "longitude": 76.23
+          },
+          {
+            "name": "Puthoorppilly Sree Krishnaswamy Temple",
+            "location": "Manjapra",
+            "deity": "Krishna",
+            "latitude": 10.21,
+            "longitude": 76.45
+          },
+          {
+            "name": "Thirumoozhikkulam Lakshmana Perumal Temple",
+            "location": "Moozhikkulam",
+            "deity": "Lakshmana",
+            "latitude": 10.20,
+            "longitude": 76.39
+          },
+          {
+            "name": "Pazhoor Perumthrikkovil",
+            "location": "Piravom",
+            "deity": "Shiva",
+            "latitude": 9.88,
+            "longitude": 76.47
+          },
+          {
+            "name": "Thiruvaloor Mahadeva temple",
+            "location": "Alangad",
+            "deity": "Shiva",
+            "latitude": 10.12,
+            "longitude": 76.31
+          },
+          {
+            "name": "Sree Balakrishna Swami Temple",
+            "location": "Kuzhuppilly",
+            "deity": "Krishna as Bala Krishna",
+            "latitude": 10.11,
+            "longitude": 76.2
+          },
+          {
+            "name": "Eravikulangara Bhagavathy Temple",
+            "location": "Akaparambu",
+            "deity": "Shiva, Ayyappan",
+            "latitude": 10.16,
+            "longitude": 76.37
+          },
+          {
+            "name": "Cherai Gowreeshwara Temple",
+            "location": "Cherai",
+            "deity": "Subrahmanya",
+            "latitude": 10.13,
+            "longitude": 76.2
+          },
+          {
+            "name": "Sree Vasudevapuram Mahavishnu Temple",
+            "location": "South Aduvassery",
+            "deity": "Mahavishnu",
+            "latitude": 10.15,
+            "longitude": 76.37
+          },
+          {
+            "name": "Puthencavu Bhagavathy Temple",
+            "location": "Elavoor",
+            "deity": "Bhadrakali",
+            "latitude": 10.01,
+            "longitude": 76.42
+          }
+        ]
+      },
+      {
+        "district_name": "IDUKKI",
+        "temples": [
+          {
+            "name": "Sri Siddhi Vinayakar Temple",
+            "location": "Chittampara",
+            "deity": "Ganesha",
+            "latitude": 9.8992761,
+            "longitude": 76.7117319
+          },
+          {
+            "name": "Sree Krishna Swami Temple",
+            "location": "Thodupuzha",
+            "deity": "Shree Krishna",
+            "latitude": 9.9,
+            "longitude": 76.71
+          },
+          {
+            "name": "Kanjiramattam Sree Mahadeva Temple",
+            "location": "Kanjiramattam",
+            "deity": "Lord Shiva",
+            "latitude": 9.886869,
+            "longitude": 76.720099
+          },
+          {
+            "name": "Uravappara Temple",
+            "location": "Olamattom, Thodupuzha",
+            "deity": "Lord Subhramanya",
+            "latitude": 9.88,
+            "longitude": 76.72
+          },
+          {
+            "name": "Karikkode Bhagavathy Temple",
+            "location": "Karikkode",
+            "deity": "Bagavathi",
+            "latitude": 9.9,
+            "longitude": 76.73
+          }
+        ]
+      },
+      {
+        "district_name": "KOTTAYAM",
+        "temples": [
+          {
+            "name": "Ettumanoor Mahadevar Temple",
+            "location": "Ettumanoor",
+            "deity": "Lord Siva",
+            "latitude": 9.67,
+            "longitude": 76.56
+          },
+          {
+            "name": "Thirunakkara Mahadevar Temple",
+            "location": "Kottayam",
+            "deity": "Lord Siva",
+            "latitude": 9.59,
+            "longitude": 76.52
+          },
+          {
+            "name": "Vaikom Mahadevar Temple",
+            "location": "Vaikom",
+            "deity": "Lord Siva",
+            "latitude": 9.75,
+            "longitude": 76.4
+          },
+          {
+            "name": "Vazhappally Maha Siva Temple",
+            "location": "Changanassery",
+            "deity": "Lord Siva",
+            "latitude": 9.46,
+            "longitude": 76.53
+          },
+          {
+            "name": "Thrikodithanam Mahavishnu Temple",
+            "location": "Changanassery",
+            "deity": "Adbhutha Narayanan, Narasimha",
+            "latitude": 9.44,
+            "longitude": 76.56
+          },
+          {
+            "name": "Kaduthuruthy Mahadeva Temple",
+            "location": "Kaduthuruthi",
+            "deity": "Lord Siva",
+            "latitude": 9.77,
+            "longitude": 76.5
+          },
+          {
+            "name": "Kumaranalloor Devi Temple",
+            "location": "Kumaranalloor",
+            "deity": "Bhagavathi",
+            "latitude": 9.62,
+            "longitude": 76.53
+          },
+          {
+            "name": "Neendoor Subrahmanya Swami Temple",
+            "location": "Neendoor, Kottayam",
+            "deity": "Lord Subramaniya",
+            "latitude": 9.68,
+            "longitude": 76.51
+          },
+          {
+            "name": "Shaktheeswaram Temple",
+            "location": "Aymanam, Kottayam",
+            "deity": "Adi Parashakti",
+            "latitude": 9.61,
+            "longitude": 76.49
+          },
+          {
+            "name": "Kavinpuram Devi Temple",
+            "location": "Ezhacherry",
+            "deity": "Shiva, Parvathy",
+            "latitude": 9.77,
+            "longitude": 76.67
+          },
+          {
+            "name": "Panachikkadu Temple",
+            "location": "Panachikkadu",
+            "deity": "Saraswati, Vishnu",
+            "latitude": 9.54,
+            "longitude": 76.55
+          },
+          {
+            "name": "Pattupurackal bhagavathy temple kattampack",
+            "location": "Njeezhoor, Kottayam",
+            "deity": "Bhadrakali",
+            "latitude": 9.8,
+            "longitude": 76.55
+          },
+          {
+            "name": "Ramapuram Sree Rama Temple",
+            "location": "Ramapuram",
+            "deity": "Sree Rama",
+            "latitude": 9.8,
+            "longitude": 76.65
+          },
+          {
+            "name": "Elamgulam Sree Dharma Shastha Temple",
+            "location": "Elamgulam",
+            "deity": "Ayyappa",
+            "latitude": 9.54,
+            "longitude": 76.69
+          }
+        ]
+      },
+      {
+        "district_name": "ALAPPUZHA",
+        "temples": [
+          {
+            "name": "Karthyayani Devi Temple",
+            "location": "Cherthala",
+            "deity": "Durga",
+            "latitude": 9.69,
+            "longitude": 76.34
+          },
+          {
+            "name": "Vadakkan Koyikkal Devi Temple Puthiyavila",
+            "location": "Puthiyavila, Kayamkulam",
+            "deity": "Sree Parvathy",
+            "latitude": 9.19,
+            "longitude": 76.45
+          },
+          {
+            "name": "Manakkattu Devi Temple",
+            "location": "Pallipad, Haripad, Alappuzha Dist",
+            "deity": "Bhuvaneswari",
+            "latitude": 9.258,
+            "longitude": 76.481
+          },
+          {
+            "name": "Chakkulathukavu Temple",
+            "location": "Neerattupuram",
+            "deity": "Durga",
+            "latitude": 9.39,
+            "longitude": 76.48
+          },
+          {
+            "name": "Chettikulangara Devi Temple",
+            "location": "Mavelikkara",
+            "deity": "Bhagavathy",
+            "latitude": 9.23,
+            "longitude": 76.52
+          },
+          {
+            "name": "Cheriyanad Sree Balasubrahmanya Swami Temple",
+            "location": "Cheriyanad, Chengannur",
+            "deity": "Subramanian",
+            "latitude": 9.26872,
+            "longitude": 76.58723
+          },
+          {
+            "name": "Sree Narayanapuram Thrikkayil Temple",
+            "location": "Perissery",
+            "deity": "Vishnu",
+            "latitude": 9.32,
+            "longitude": 76.58
+          },
+          {
+            "name": "Padanilam Parabrahma Temple",
+            "location": "Padanilam, Mavelikkara",
+            "deity": "Parabrahma",
+            "latitude": 9.19,
+            "longitude": 76.64
+          },
+          {
+            "name": "Chengannur Mahadeva Temple",
+            "location": "Chengannur",
+            "deity": "Shiva, Parvathi",
+            "latitude": 9.32,
+            "longitude": 76.61
+          },
+          {
+            "name": "Kandiyoor Sree Mahadeva Temple",
+            "location": "Mavelikkara",
+            "deity": "Shiva",
+            "latitude": 9.25,
+            "longitude": 76.53
+          },
+          {
+            "name": "Anandeshwaram Mahadeva Temple",
+            "location": "Pandanad, Chengannur",
+            "deity": "Shiva",
+            "latitude": 9.334972,
+            "longitude": 76.373917
+          },
+          {
+            "name": "Haripad Sree Subrahmanya Swamy Temple",
+            "location": "Haripad",
+            "deity": "Subrahmanya Swamy",
+            "latitude": 9.28,
+            "longitude": 76.45
+          },
+          {
+            "name": "Mannarasala Temple",
+            "location": "Haripad",
+            "deity": "Nagaraja & Nagayakshi",
+            "latitude": 9.29,
+            "longitude": 76.45
+          },
+          {
+            "name": "Ambalappuzha Sri Krishna Temple",
+            "location": "Ambalapuzha",
+            "deity": "Krishna",
+            "latitude": 9.38,
+            "longitude": 76.37
+          },
+          {
+            "name": "Vethalan Kavu Mahadeva Temple",
+            "location": "Kappil East, Krishnapuram, Alappuzha, Kayamkulam",
+            "deity": "Shiva",
+            "latitude": 9.16,
+            "longitude": 76.51
+          },
+          {
+            "name": "Evoor Major Sri Krishnaswamy Temple",
+            "location": "Evoor, Haripad",
+            "deity": "Krishna",
+            "latitude": 9.23,
+            "longitude": 76.48
+          },
+          {
+            "name": "Vettikulangara Devi Temple Cheppad",
+            "location": "Cheppad, Haripad",
+            "deity": "Durga",
+            "latitude": 9.24,
+            "longitude": 76.46
+          },
+          {
+            "name": "Adichikkavu Sree Durga Devi Kshetram",
+            "location": "Pandanad, Chengannur",
+            "deity": "Durga",
+            "latitude": 9.33246,
+            "longitude": 76.563879
+          },
+          {
+            "name": "Kavil Sri Bhadrakali Temple",
+            "location": "Karumadi, Alappuzha",
+            "deity": "Bhadrakali",
+            "latitude": 9.47,
+            "longitude": 76.38
+          }
+        ]
+      },
+      {
+        "district_name": "PATHANAMTHITTA",
+        "temples": [
+          {
+            "name": "Oorali Appooppan Kavu",
+            "location": "Kalleli",
+            "deity": "Oorali Appooppan",
+            "latitude": 9.19,
+            "longitude": 76.9
+          },
+          {
+            "name": "Malayalappuzha Devi Temple",
+            "location": "Malayalapuzha",
+            "deity": "Devi",
+            "latitude": 9.29,
+            "longitude": 76.82
+          },
+          {
+            "name": "Sabarimala Temple",
+            "location": "Sabarimala",
+            "deity": "Ayyappan",
+            "latitude": 9.43,
+            "longitude": 77.08
+          },
+          {
+            "name": "Valiyakoikkal Temple",
+            "location": "Pandalam",
+            "deity": "Ayyappan",
+            "latitude": 9.23,
+            "longitude": 76.67
+          },
+          {
+            "name": "Aranmula Parthasarathy Temple",
+            "location": "Aranmula",
+            "deity": "lord Krishna",
+            "latitude": 9.33,
+            "longitude": 76.69
+          },
+          {
+            "name": "Kaviyoor Mahadevar Temple",
+            "location": "Kaviyoor",
+            "deity": "Mahadeva",
+            "latitude": 9.4,
+            "longitude": 76.61
+          },
+          {
+            "name": "Thumpamon Vadakkumnatha Temple",
+            "location": "Thumpamon-ambalakadavu",
+            "deity": "Muruga",
+            "latitude": 9.20,
+            "longitude": 76.68
+          },
+          {
+            "name": "Anikkattilammakshethram",
+            "location": "Mallappally Anicadu",
+            "deity": "Shiva Parvathi",
+            "latitude": 9.46,
+            "longitude": 76.68
+          },
+          {
+            "name": "Sreevallabha Temple",
+            "location": "Thiruvalla",
+            "deity": "Sreevallabhan, Sudarshanamoorthy",
+            "latitude": 9.37,
+            "longitude": 76.56
+          },
+          {
+            "name": "Devi Temple",
+            "location": "Thiruvalla",
+            "deity": "Durga",
+            "latitude": 9.39,
+            "longitude": 76.58
+          },
+          {
+            "name": "Thattayil Orippurathu Bhagavathi Temple",
+            "location": "Thattayil",
+            "deity": "Bhadrakali",
+            "latitude": 9.21,
+            "longitude": 76.74
+          }
+        ]
+      },
+      {
+        "district_name": "KOLLAM",
+        "temples": [
+          {
+            "name": "Achankovil Sastha Temple",
+            "location": "Achankovil",
+            "deity": "Sastha",
+            "latitude": 9.09,
+            "longitude": 77.12
+          },
+          {
+            "name": "Aryankavu Sastha Temple",
+            "location": "Aryankavu",
+            "deity": "Sastha",
+            "latitude": 8.98,
+            "longitude": 77.15
+          },
+          {
+            "name": "Changankulangara Mahadeva Temple",
+            "location": "Changankulangara",
+            "deity": "Mahadeva",
+            "latitude": 9.11,
+            "longitude": 76.52
+          },
+          {
+            "name": "Kulathupuzha Sastha Temple",
+            "location": "Kulathupuzha",
+            "deity": "Sastha",
+            "latitude": 8.9,
+            "longitude": 77.06
+          },
+          {
+            "name": "Sasthamcotta Sree Dharma Sastha Temple",
+            "location": "Sasthamkotta",
+            "deity": "Sastha",
+            "latitude": 9.04,
+            "longitude": 76.63
+          },
+          {
+            "name": "Kadakkal Devi Temple",
+            "location": "Kadakkal",
+            "deity": "Bhadrakali",
+            "latitude": 8.83,
+            "longitude": 76.92
+          },
+          {
+            "name": "Kilimarathukavu Temple",
+            "location": "Kadakkal",
+            "deity": "Shiva, Parvathi",
+            "latitude": 8.83,
+            "longitude": 76.92
+          },
+          {
+            "name": "Poruvazhy Peruviruthy Malanada Temple",
+            "location": "Poruvazhy",
+            "deity": "Duryodhana",
+            "latitude": 9.1,
+            "longitude": 76.66
+          },
+          {
+            "name": "Chathannoor Sree Bhoothanatha Temple",
+            "location": "Chathannoor",
+            "deity": "",
+            "latitude": 8.86,
+            "longitude": 76.71
+          },
+          {
+            "name": "Puttingal Temple",
+            "location": "Paravur",
+            "deity": "Puttingal Goddess",
+            "latitude": 8.81,
+            "longitude": 76.66
+          },
+          {
+            "name": "Pulimukham Devi Temple",
+            "location": "Thazhava",
+            "deity": "Bhadrakali",
+            "latitude": 9.093,
+            "longitude": 76.553
+          },
+          {
+            "name": "Vayalil Thrikkovil Mahavishnu Temple",
+            "location": "Ilamkulam, Kalluvathukkal",
+            "deity": "Vishnu",
+            "latitude": 8.83,
+            "longitude": 76.74
+          },
+          {
+            "name": "Ammachiveedu Muhurthi",
+            "location": "",
+            "deity": "Ganapathy, Chamundi, Yogeshwaran",
+            "latitude": 8.9,
+            "longitude": 76.6
+          },
+          {
+            "name": "Oachira Temple",
+            "location": "Oachira",
+            "deity": "Parabrahman",
+            "latitude": 9.14,
+            "longitude": 76.51
+          },
+          {
+            "name": "Kottarakkara Sree Mahaganapathi Kshethram",
+            "location": "Kottarakkara",
+            "deity": "Siva Ganesha",
+            "latitude": 9.0,
+            "longitude": 76.77
+          },
+          {
+            "name": "Sree Indilayappan Temple",
+            "location": "Marayikkodu, Karickom",
+            "deity": "Shiva, Parvathi, Vishnu",
+            "latitude": 8.99,
+            "longitude": 76.81
+          }
+        ]
+      },
+      {
+        "district_name": "THIRUVANANTHAPURAM",
+        "position": "Southernmost District",
+        "temples": [
+          {
+            "name": "Aazhimala Shiva Temple",
+            "location": "Pulinkudi",
+            "deity": "Shiva",
+            "latitude": 8.36,
+            "longitude": 77.01
+          },
+          {
+            "name": "Padiyanoor Devi Temple",
+            "location": "Padiyanoor, Poovachal, Kattakada",
+            "deity": "Chamundi",
+            "latitude": 8.53,
+            "longitude": 77.1
+          },
+          {
+            "name": "Attukal Temple",
+            "location": "Attukal",
+            "deity": "Bhadrakali",
+            "latitude": 8.47,
+            "longitude": 76.96
+          },
+          {
+            "name": "Vellayani Devi Temple",
+            "location": "Vellayani",
+            "deity": "Bhadrakali",
+            "latitude": 8.5,
+            "longitude": 77.0
+          },
+          {
+            "name": "Andoor Kandan Sree Dharma Sastha Temple",
+            "location": "Tholady",
+            "deity": "Dharma Sastha",
+            "latitude": 8.4,
+            "longitude": 77.18
+          },
+          {
+            "name": "Palakkavu Bhagavathi temple",
+            "location": "Edava, Varkala, Trivandrum",
+            "deity": "Bhadrakali",
+            "latitude": 8.77,
+            "longitude": 76.69
+          },
+          {
+            "name": "Amunthirathu Devi Temple",
+            "location": "Mudakkal, Attingal, Thiruvananthapuram",
+            "deity": "Sree Bhadra Kali",
+            "latitude": 8.69,
+            "longitude": 76.88
+          },
+          {
+            "name": "Avanavanchery Sri Indilayappan Temple",
+            "location": "Avanavanchery, Attingal",
+            "deity": "Shiva",
+            "latitude": 8.69,
+            "longitude": 76.83
+          },
+          {
+            "name": "Irumkulangara Durga Devi Temple",
+            "location": "Manacaud",
+            "deity": "Durga, Navagraha",
+            "latitude": 8.47,
+            "longitude": 76.94
+          },
+          {
+            "name": "Janardanaswamy Temple",
+            "location": "Varkala, Thiruvananthapuram",
+            "deity": "Vishnu",
+            "latitude": 8.73,
+            "longitude": 76.71
+          },
+          {
+            "name": "O.T.C. Hanuman Temple",
+            "location": "Palayam",
+            "deity": "Hanuman",
+            "latitude": 8.5,
+            "longitude": 77.0
+          },
+          {
+            "name": "Kamaleswaram Mahadeva Temple",
+            "location": "Kamaleswaram",
+            "deity": "Shiva",
+            "latitude": 8.47,
+            "longitude": 76.95
+          },
+          {
+            "name": "Karikkakom Devi Temple",
+            "location": "Karikkakom",
+            "deity": "Bhagavathi",
+            "latitude": 8.5,
+            "longitude": 76.9
+          },
+          {
+            "name": "Keleswaram Mahadeva Temple",
+            "location": "Keleswaram",
+            "deity": "Shiva",
+            "latitude": 8.43,
+            "longitude": 77.02
+          },
+          {
+            "name": "Mithrananthapuram Trimurti Temple",
+            "location": "Thiruvananthapuram",
+            "deity": "Brahma, Vishnu, Shiva",
+            "latitude": 8.48,
+            "longitude": 76.94
+          },
+          {
+            "name": "Mukkolakkal Bhagawathi Temple",
+            "location": "Mukkolakkal",
+            "deity": "",
+            "latitude": 8.47,
+            "longitude": 76.94
+          },
+          {
+            "name": "Padmanabhaswamy Temple",
+            "location": "Thiruvananthapuram",
+            "deity": "Vishnu",
+            "latitude": 8.48,
+            "longitude": 76.94
+          },
+          {
+            "name": "Pazhaya Sreekanteswaram Temple",
+            "location": "Sreekanteswaram",
+            "deity": "Shiva",
+            "latitude": 8.5,
+            "longitude": 77.0
+          },
+          {
+            "name": "Palkulangara Devi Temple",
+            "location": "Palkulangara",
+            "deity": "Devi",
+            "latitude": 8.49,
+            "longitude": 76.93
+          },
+          {
+            "name": "Karyavattom Dharma Sastha Temple",
+            "location": "Karyavattom",
+            "deity": "Dharma Sastha",
+            "latitude": 8.52,
+            "longitude": 76.98
+          },
+          {
+            "name": "Sarkaradevi Temple",
+            "location": "Sarkara, Chirayinkeezhu",
+            "deity": "Bhadrakali",
+            "latitude": 8.5,
+            "longitude": 77.0
+          },
+          {
+            "name": "Sivagiri",
+            "location": "Varkala, Thiruvananthapuram",
+            "deity": "Saraswathy, Narayana Guru",
+            "latitude": 8.5,
+            "longitude": 77.0
+          },
+          {
+            "name": "Sree Shivashakthi Mahaganapathi Temple",
+            "location": "Keezhammakam, Chenkal",
+            "deity": "Shiva, Parvati and Ganapathy",
+            "latitude": 8.5,
+            "longitude": 77.0
+          },
+          {
+            "name": "Sreekanteswaram",
+            "location": "Thiruvananthapuram",
+            "deity": "Shiva",
+            "latitude": 8.5,
+            "longitude": 77.0
+          },
+          {
+            "name": "Thaliyadichapuram Sree Mahadeva Temple",
+            "location": "Nemom",
+            "deity": "Shiva",
+            "latitude": 8.5,
+            "longitude": 77.0
+          },
+          {
+            "name": "Thirupalkadal Sreekrishnaswamy Temple",
+            "location": "Keezhperoor",
+            "deity": "Krishna",
+            "latitude": 8.5,
+            "longitude": 77.0
+          },
+          {
+            "name": "Thiruvallam Sree Parasurama Temple",
+            "location": "Thiruvallam",
+            "deity": "Parashurama",
+            "latitude": 8.5,
+            "longitude": 77.0
+          },
+          {
+            "name": "Venkatachalapathy Temple",
+            "location": "Thiruvananthapuram",
+            "deity": "Vishnu, Garuda",
+            "latitude": 8.5,
+            "longitude": 77.0
+          },
+          {
+            "name": "Gandhari Amman Kovil",
+            "location": "Thiruvananthapuram",
+            "deity": "Gandhari amman, Ganapathi",
+            "latitude": 8.49,
+            "longitude": 76.95
+          },
+          {
+            "name": "Major Sree Mahadeva Temple",
+            "location": "Parassala",
+            "deity": "Shiva",
+            "latitude": 8.343898099999999,
+            "longitude": 77.1519902
+          },
+          {
+            "name": "Sree Krishna Swami Temple",
+            "location": "Neyyattinkara",
+            "deity": "Krishna",
+            "latitude": 8.5,
+            "longitude": 77.0
+          }
+        ]
+      }
+    ]
+  }
+};
+
+        // Create layer groups for each district
+        const districtLayers = {};
+        templeData.kerala_temples.districts.forEach(district => {
+            districtLayers[district.district_name] = L.layerGroup();
+        });
+
+        // Function to add temple markers
+        function addTempleMarkers() {
+            templeData.kerala_temples.districts.forEach(district => {
+                district.temples.forEach(temple => {
+                    // Create a custom icon
+                    const templeIcon = L.divIcon({
+                        className: 'temple-icon',
+                        html: '',
+                        iconSize: [8, 8]
+                    });
+                    
+                    // Add marker to the district layer group
+                    const marker = L.marker([temple.latitude, temple.longitude], {icon: templeIcon})
+                        .bindPopup(`
+                            <b>${temple.name}</b><br>
+                            <i>Deity: ${temple.deity}</i><br>
+                            Location: ${temple.location}<br>
+                            District: ${district.district_name}
+                        `);
+                    
+                    districtLayers[district.district_name].addLayer(marker);
+                });
+                
+                // Add district layer to map
+                districtLayers[district.district_name].addTo(map);
+            });
+        }
+
+        // Call the function to add markers
+        addTempleMarkers();
+
+        // Add district control
+        const districtControl = L.control({position: 'topleft'});
+        
+        districtControl.onAdd = function(map) {
+            const div = L.DomUtil.create('div', 'district-control');
+            div.innerHTML = '<h4>Districts</h4>';
+            
+            const container = L.DomUtil.create('div', 'district-container');
+            div.appendChild(container);
+            
+            templeData.kerala_temples.districts.forEach(district => {
+                const item = L.DomUtil.create('div', 'district-item', container);
+                item.innerHTML = district.district_name;
+                item.onclick = function() {
+                    const bounds = districtLayers[district.district_name].getBounds();
+                    if (bounds.isValid()) {
+                        map.fitBounds(bounds, {padding: [50, 50]});
+                    }
+                };
+            });
+            
+            return div;
+        };
+        
+        districtControl.addTo(map);
+    </script>
+</body>
+</html>
